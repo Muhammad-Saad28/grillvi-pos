@@ -1,0 +1,174 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
+import { Input } from "@/components/ui/input";
+import { getPOSTables, getPOSOrders, POSTable, POSOrder } from "@/lib/pos-data";
+import { Utensils, Users, Plus, CheckCircle, RefreshCw } from "lucide-react";
+
+export default function AdminTablesPage() {
+  const [tables, setTables] = useState<POSTable[]>([]);
+  const [orders, setOrders] = useState<POSOrder[]>([]);
+  const [selectedTable, setSelectedTable] = useState<POSTable | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newTableNum, setNewTableNum] = useState("");
+  const [newCapacity, setNewCapacity] = useState("4");
+
+  const refreshData = async () => {
+    const [fetchedTables, fetchedOrders] = await Promise.all([
+      getPOSTables(),
+      getPOSOrders(),
+    ]);
+    setTables(fetchedTables);
+    setOrders(fetchedOrders);
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
+
+  const handleAddTable = () => {
+    if (!newTableNum) return;
+    const num = parseInt(newTableNum, 10);
+    const cap = parseInt(newCapacity, 10) || 4;
+    setTables([
+      ...tables,
+      { id: `t_${Date.now()}`, table_number: num, capacity: cap, status: "available" },
+    ]);
+    setIsAddModalOpen(false);
+    setNewTableNum("");
+  };
+
+  const getActiveOrderForTable = (tableNumber: number) => {
+    return orders.find(
+      (o) => o.table_number === tableNumber && o.status !== "completed" && o.status !== "cancelled" && o.status !== "rejected"
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-white tracking-tight">Table Management</h1>
+          <p className="text-xs text-zinc-400">Configure layout, capacity, and live table occupancy</p>
+        </div>
+        <Button
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-orange-600 hover:bg-orange-500 font-bold text-xs flex items-center space-x-1"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Add New Table</span>
+        </Button>
+      </div>
+
+      {/* Grid of Tables */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {tables.map((t) => {
+          const activeOrder = getActiveOrderForTable(t.table_number);
+          return (
+            <Card
+              key={t.id}
+              onClick={() => setSelectedTable(t)}
+              className={`cursor-pointer transition-all border p-4 flex flex-col justify-between h-40 ${
+                t.status === "occupied"
+                  ? "bg-orange-950/20 border-orange-500/40 hover:border-orange-500"
+                  : t.status === "reserved"
+                  ? "bg-sky-950/20 border-sky-500/40 hover:border-sky-500"
+                  : "bg-zinc-900 border-zinc-800 hover:border-zinc-700"
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <span className="text-2xl font-black text-white">
+                  #{t.table_number.toString().padStart(2, "0")}
+                </span>
+                <Badge variant={t.status}>{t.status}</Badge>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center text-xs text-zinc-400 space-x-1">
+                  <Users className="h-3.5 w-3.5" />
+                  <span>Cap: {t.capacity} Seats</span>
+                </div>
+                {activeOrder ? (
+                  <p className="text-[11px] font-bold text-orange-400 truncate">
+                    Order #{activeOrder.id} (Rs. {activeOrder.total})
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-emerald-400 font-medium">Ready for guests</p>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Table Details Modal */}
+      <Modal
+        isOpen={!!selectedTable}
+        onClose={() => setSelectedTable(null)}
+        title={`Table #${selectedTable?.table_number.toString().padStart(2, "0")} Details`}
+      >
+        {selectedTable && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-950 border border-zinc-800">
+              <span className="text-xs text-zinc-400">Current Status</span>
+              <Badge variant={selectedTable.status}>{selectedTable.status}</Badge>
+            </div>
+
+            {getActiveOrderForTable(selectedTable.table_number) ? (
+              <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2 text-xs">
+                <span className="font-bold text-white text-sm">Active Order Summary</span>
+                <p className="text-zinc-400">
+                  Order #{getActiveOrderForTable(selectedTable.table_number)?.id} &bull; Waiter: {getActiveOrderForTable(selectedTable.table_number)?.waiter_name}
+                </p>
+                <div className="pt-2 border-t border-zinc-800 flex justify-between font-bold text-orange-400">
+                  <span>Total Amount</span>
+                  <span>Rs. {getActiveOrderForTable(selectedTable.table_number)?.total}</span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-zinc-500 text-center py-2">No active order linked to this table right now.</p>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <Button size="sm" variant="outline" onClick={() => setSelectedTable(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Add Table Modal */}
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add New Table">
+        <div className="space-y-4">
+          <Input
+            label="Table Number"
+            type="number"
+            placeholder="13"
+            value={newTableNum}
+            onChange={(e) => setNewTableNum(e.target.value)}
+          />
+          <Input
+            label="Seating Capacity"
+            type="number"
+            placeholder="4"
+            value={newCapacity}
+            onChange={(e) => setNewCapacity(e.target.value)}
+          />
+          <div className="flex justify-end space-x-2 pt-2">
+            <Button variant="ghost" size="sm" onClick={() => setIsAddModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleAddTable} className="bg-orange-600 hover:bg-orange-500 font-bold">
+              Add Table
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}

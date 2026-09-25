@@ -61,7 +61,12 @@ export default function WaiterTablesPage() {
                   <span>{t.capacity} Seats</span>
                 </div>
 
-                {activeOrder ? (
+                {t.status === "reserved" && (t.reserved_by || t.reserved_time) ? (
+                  <div className="text-xs bg-sky-950/40 p-1.5 rounded border border-sky-800/50 space-y-0.5">
+                    {t.reserved_by && <p className="font-medium text-sky-200 truncate">👤 {t.reserved_by}</p>}
+                    {t.reserved_time && <p className="text-[10px] text-sky-400">⏰ {t.reserved_time}</p>}
+                  </div>
+                ) : activeOrder ? (
                   <p className="text-xs font-bold text-orange-400 truncate">
                     Order #{activeOrder.id} &bull; Rs. {activeOrder.total}
                   </p>

@@ -289,10 +289,10 @@ export async function createPOSOrder(order: {
   waiter_id: string;
   waiter_name: string;
   order_type?: "dine_in" | "takeaway" | "delivery";
-  customer_name?: string;
-  customer_phone?: string;
-  delivery_address?: string;
-  notes?: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  delivery_address?: string | null;
+  notes?: string | null;
   items: { menu_item_id: string; menu_item_name: string; quantity: number; price: number }[];
 }): Promise<POSOrder> {
   const orderType = order.order_type || "dine_in";

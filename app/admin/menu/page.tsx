@@ -6,12 +6,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
-import { getPOSMenuItems, getPOSCategories, POSMenuItem, POSCategory } from "@/lib/pos-data";
-import { Search, Plus, Edit2, CheckCircle, XCircle, Tag } from "lucide-react";
+import { 
+  getPOSMenuItems, 
+  getPOSCategories, 
+  getPOSInventory, 
+  getPOSMenuItemIngredients, 
+  addPOSMenuItemIngredient, 
+  deletePOSMenuItemIngredient, 
+  POSMenuItem, 
+  POSCategory, 
+  POSInventoryItem, 
+  POSMenuItemIngredient 
+} from "@/lib/pos-data";
+import { Search, Plus, Edit2, CheckCircle, XCircle, Tag, Layers, Trash2 } from "lucide-react";
 
 export default function AdminMenuPage() {
   const [items, setItems] = useState<POSMenuItem[]>([]);
   const [categories, setCategories] = useState<POSCategory[]>([]);
+  const [inventoryList, setInventoryList] = useState<POSInventoryItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -22,13 +34,21 @@ export default function AdminMenuPage() {
   const [newPrice, setNewPrice] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
+  // Recipe Modal State
+  const [recipeMenuItem, setRecipeMenuItem] = useState<POSMenuItem | null>(null);
+  const [ingredients, setIngredients] = useState<POSMenuItemIngredient[]>([]);
+  const [selectedInvId, setSelectedInvId] = useState("");
+  const [qtyRequired, setQtyRequired] = useState("");
+
   const refreshData = async () => {
-    const [fetchedItems, fetchedCats] = await Promise.all([
+    const [fetchedItems, fetchedCats, fetchedInv] = await Promise.all([
       getPOSMenuItems(),
       getPOSCategories(),
+      getPOSInventory(),
     ]);
     setItems(fetchedItems);
     setCategories(fetchedCats);
+    setInventoryList(fetchedInv);
   };
 
   useEffect(() => {
@@ -63,6 +83,31 @@ export default function AdminMenuPage() {
     setNewDesc("");
   };
 
+  const openRecipeModal = async (item: POSMenuItem) => {
+    setRecipeMenuItem(item);
+    const fetchedIngs = await getPOSMenuItemIngredients(item.id);
+    setIngredients(fetchedIngs);
+  };
+
+  const handleAddIngredient = async () => {
+    if (!recipeMenuItem || !selectedInvId || !qtyRequired) return;
+    const qtyNum = parseFloat(qtyRequired);
+    if (isNaN(qtyNum) || qtyNum <= 0) return;
+
+    await addPOSMenuItemIngredient(recipeMenuItem.id, selectedInvId, qtyNum);
+    const updated = await getPOSMenuItemIngredients(recipeMenuItem.id);
+    setIngredients(updated);
+    setSelectedInvId("");
+    setQtyRequired("");
+  };
+
+  const handleDeleteIngredient = async (ingId: string) => {
+    if (!recipeMenuItem) return;
+    await deletePOSMenuItemIngredient(ingId);
+    const updated = await getPOSMenuItemIngredients(recipeMenuItem.id);
+    setIngredients(updated);
+  };
+
   const filteredItems = items.filter((item) => {
     const matchesCat = selectedCategory === "All" || item.category_name === selectedCategory;
     const matchesSearch =
@@ -75,8 +120,8 @@ export default function AdminMenuPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Menu Management</h1>
-          <p className="text-xs text-zinc-400">Configure menu categories, item pricing, and availability</p>
+          <h1 className="text-2xl font-black text-white tracking-tight">Menu Management & Recipe Ingredients</h1>
+          <p className="text-xs text-zinc-400">Configure menu categories, dish pricing, availability & auto-deduction recipes</p>
         </div>
         <Button
           onClick={() => setIsAddModalOpen(true)}
@@ -151,18 +196,28 @@ export default function AdminMenuPage() {
                 )}
               </div>
 
-              <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between">
+              <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between gap-2">
                 <button
                   onClick={() => handleToggleAvailability(item.id)}
-                  className={`text-xs font-bold flex items-center space-x-1.5 px-2.5 py-1 rounded-lg transition-colors ${
+                  className={`text-[11px] font-bold flex items-center space-x-1 px-2 py-1 rounded-lg transition-colors ${
                     item.available
                       ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                       : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                   }`}
                 >
-                  {item.available ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                  {item.available ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
                   <span>{item.available ? "Available" : "Unavailable"}</span>
                 </button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openRecipeModal(item)}
+                  className="border-zinc-800 text-zinc-300 hover:bg-zinc-800 text-[11px] font-bold flex items-center space-x-1"
+                >
+                  <Layers className="h-3 w-3 text-orange-400" />
+                  <span>Recipe</span>
+                </Button>
               </div>
             </div>
           </Card>
@@ -214,6 +269,88 @@ export default function AdminMenuPage() {
             </Button>
             <Button size="sm" onClick={handleAddItem} className="bg-orange-600 hover:bg-orange-500 font-bold">
               Save Item
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Recipe / Ingredients Mapping Modal */}
+      <Modal isOpen={!!recipeMenuItem} onClose={() => setRecipeMenuItem(null)} title={`Recipe Mapping - ${recipeMenuItem?.name}`}>
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-400">
+            Link raw inventory stock required for 1 serving of <span className="font-bold text-white">{recipeMenuItem?.name}</span>. Stock is automatically deducted when orders complete.
+          </p>
+
+          {/* Current Recipe List */}
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {ingredients.length === 0 ? (
+              <div className="py-6 text-center text-zinc-500 text-xs">
+                No inventory ingredients mapped to this dish yet.
+              </div>
+            ) : (
+              ingredients.map((ing) => (
+                <div key={ing.id} className="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-white">{ing.inventory_name}</span>
+                    <span className="text-zinc-500 ml-2">({ing.quantity_required} {ing.unit} per serving)</span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteIngredient(ing.id)}
+                    className="p-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Add New Recipe Ingredient Form */}
+          <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3">
+            <p className="text-xs font-bold text-orange-400 uppercase">Add Ingredient to Recipe</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1 font-bold">Raw Stock Item</label>
+                <select
+                  value={selectedInvId}
+                  onChange={(e) => setSelectedInvId(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-100"
+                >
+                  <option value="">-- Select Inventory --</option>
+                  {inventoryList.map((inv) => (
+                    <option key={inv.id} value={inv.id}>
+                      {inv.name} ({inv.unit})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1 font-bold">Qty per Serving</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g. 0.25"
+                  value={qtyRequired}
+                  onChange={(e) => setQtyRequired(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-100 placeholder:text-zinc-600"
+                />
+              </div>
+            </div>
+
+            <Button
+              size="sm"
+              disabled={!selectedInvId || !qtyRequired}
+              onClick={handleAddIngredient}
+              className="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs"
+            >
+              Add Recipe Ingredient
+            </Button>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button size="sm" variant="ghost" onClick={() => setRecipeMenuItem(null)}>
+              Close
             </Button>
           </div>
         </div>

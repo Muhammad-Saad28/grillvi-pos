@@ -394,14 +394,6 @@ FOR EACH ROW EXECUTE FUNCTION set_completed_at();
 -- --------------------------------------------
 -- 8. INITIAL PRODUCTION SEED DATA
 -- --------------------------------------------
-
--- Insert Production System Users with Exact Specified Credentials
-INSERT INTO users (id, name, email, password, role, active, status) VALUES
-  ('10000000-0000-0000-0000-000000000001', 'Admin Manager', 'admin@grillvi', 'admin123', 'admin', true, 'approved'),
-  ('10000000-0000-0000-0000-000000000002', 'Ali Hassan', 'ali@grillvi', 'ali1@123', 'waiter', true, 'approved'),
-  ('10000000-0000-0000-0000-000000000003', 'Afaq Ahmed', 'afaq@grillvi', 'afaq1@123', 'waiter', true, 'approved'),
-  ('10000000-0000-0000-0000-000000000004', 'Chef Rehan', 'rehan@grillvi', 'rehan@123', 'kitchen', true, 'approved');
-
 -- Insert 12 Floor Tables
 INSERT INTO tables (table_number, capacity, status) VALUES
   (1, 2, 'available'),
@@ -443,20 +435,20 @@ INSERT INTO menu_items (id, category_id, name, description, price, available, fe
 
 -- Insert Base Inventory Stock
 INSERT INTO inventory (id, name, unit, quantity, minimum_quantity) VALUES
-  ('i0000000-0000-0000-0000-000000000001', 'Chicken', 'kg', 15.0, 2.0),
-  ('i0000000-0000-0000-0000-000000000002', 'Beef', 'kg', 10.0, 1.0),
-  ('i0000000-0000-0000-0000-000000000003', 'Cooking Oil', 'L', 8.0, 2.0),
-  ('i0000000-0000-0000-0000-000000000004', 'Cheese Slices', 'pcs', 50.0, 10.0),
-  ('i0000000-0000-0000-0000-000000000005', 'BBQ Masala', 'g', 500.0, 100.0),
-  ('i0000000-0000-0000-0000-000000000006', 'Basmati Rice', 'kg', 25.0, 5.0),
-  ('i0000000-0000-0000-0000-000000000007', 'Soft Drinks Cans', 'pcs', 60.0, 12.0);
+  ('e0000000-0000-0000-0000-000000000001', 'Chicken', 'kg', 15.0, 2.0),
+  ('e0000000-0000-0000-0000-000000000002', 'Beef', 'kg', 10.0, 1.0),
+  ('e0000000-0000-0000-0000-000000000003', 'Cooking Oil', 'L', 8.0, 2.0),
+  ('e0000000-0000-0000-0000-000000000004', 'Cheese Slices', 'pcs', 50.0, 10.0),
+  ('e0000000-0000-0000-0000-000000000005', 'BBQ Masala', 'g', 500.0, 100.0),
+  ('e0000000-0000-0000-0000-000000000006', 'Basmati Rice', 'kg', 25.0, 5.0),
+  ('e0000000-0000-0000-0000-000000000007', 'Soft Drinks Cans', 'pcs', 60.0, 12.0);
 
 -- Insert Recipe Ingredients Mapping
 INSERT INTO menu_item_ingredients (menu_item_id, inventory_id, quantity_required) VALUES
-  ('f0000000-0000-0000-0000-000000000001', 'i0000000-0000-0000-0000-000000000001', 0.35), -- Chicken Tikka = 0.35kg Chicken
-  ('f0000000-0000-0000-0000-000000000002', 'i0000000-0000-0000-0000-000000000002', 0.25), -- Seekh Kabab = 0.25kg Beef
-  ('f0000000-0000-0000-0000-000000000003', 'i0000000-0000-0000-0000-000000000002', 0.30), -- Beef Boti = 0.30kg Beef
-  ('f0000000-0000-0000-0000-000000000004', 'i0000000-0000-0000-0000-000000000002', 0.15), -- Cheese Burger = 0.15kg Beef
-  ('f0000000-0000-0000-0000-000000000004', 'i0000000-0000-0000-0000-000000000004', 1.0),  -- Cheese Burger = 1 Cheese Slice
-  ('f0000000-0000-0000-0000-000000000005', 'i0000000-0000-0000-0000-000000000001', 0.18), -- Crispy Chicken Burger = 0.18kg Chicken
-  ('f0000000-0000-0000-0000-000000000008', 'i0000000-0000-0000-0000-000000000007', 1.0);  -- Cold Drink = 1 Soft Drink Can
+  ('f0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001', 0.35), -- Chicken Tikka = 0.35kg Chicken
+  ('f0000000-0000-0000-0000-000000000002', 'e0000000-0000-0000-0000-000000000002', 0.25), -- Seekh Kabab = 0.25kg Beef
+  ('f0000000-0000-0000-0000-000000000003', 'e0000000-0000-0000-0000-000000000002', 0.30), -- Beef Boti = 0.30kg Beef
+  ('f0000000-0000-0000-0000-000000000004', 'e0000000-0000-0000-0000-000000000002', 0.15), -- Cheese Burger = 0.15kg Beef
+  ('f0000000-0000-0000-0000-000000000004', 'e0000000-0000-0000-0000-000000000004', 1.0),  -- Cheese Burger = 1 Cheese Slice
+  ('f0000000-0000-0000-0000-000000000005', 'e0000000-0000-0000-0000-000000000001', 0.18), -- Crispy Chicken Burger = 0.18kg Chicken
+  ('f0000000-0000-0000-0000-000000000008', 'e0000000-0000-0000-0000-000000000007', 1.0);  -- Cold Drink = 1 Soft Drink Can

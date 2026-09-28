@@ -146,13 +146,13 @@ let mockOrders: POSOrder[] = [];
 let mockNotifications: POSNotification[] = [];
 
 let mockInventory: POSInventoryItem[] = [
-  { id: "i0000000-0000-0000-0000-000000000001", name: "Chicken", unit: "kg", quantity: 15.0, minimum_quantity: 2.0, updated_at: new Date().toISOString(), status: "in_stock" },
-  { id: "i0000000-0000-0000-0000-000000000002", name: "Beef", unit: "kg", quantity: 10.0, minimum_quantity: 1.0, updated_at: new Date().toISOString(), status: "in_stock" },
-  { id: "i0000000-0000-0000-0000-000000000003", name: "Cooking Oil", unit: "L", quantity: 8.0, minimum_quantity: 2.0, updated_at: new Date().toISOString(), status: "in_stock" },
-  { id: "i0000000-0000-0000-0000-000000000004", name: "Cheese Slices", unit: "pcs", quantity: 50.0, minimum_quantity: 10.0, updated_at: new Date().toISOString(), status: "in_stock" },
-  { id: "i0000000-0000-0000-0000-000000000005", name: "BBQ Masala", unit: "g", quantity: 500.0, minimum_quantity: 100.0, updated_at: new Date().toISOString(), status: "in_stock" },
-  { id: "i0000000-0000-0000-0000-000000000006", name: "Basmati Rice", unit: "kg", quantity: 25.0, minimum_quantity: 5.0, updated_at: new Date().toISOString(), status: "in_stock" },
-  { id: "i0000000-0000-0000-0000-000000000007", name: "Soft Drinks Cans", unit: "pcs", quantity: 60.0, minimum_quantity: 12.0, updated_at: new Date().toISOString(), status: "in_stock" },
+  { id: "e0000000-0000-0000-0000-000000000001", name: "Chicken", unit: "kg", quantity: 15.0, minimum_quantity: 2.0, updated_at: new Date().toISOString(), status: "in_stock" },
+  { id: "e0000000-0000-0000-0000-000000000002", name: "Beef", unit: "kg", quantity: 10.0, minimum_quantity: 1.0, updated_at: new Date().toISOString(), status: "in_stock" },
+  { id: "e0000000-0000-0000-0000-000000000003", name: "Cooking Oil", unit: "L", quantity: 8.0, minimum_quantity: 2.0, updated_at: new Date().toISOString(), status: "in_stock" },
+  { id: "e0000000-0000-0000-0000-000000000004", name: "Cheese Slices", unit: "pcs", quantity: 50.0, minimum_quantity: 10.0, updated_at: new Date().toISOString(), status: "in_stock" },
+  { id: "e0000000-0000-0000-0000-000000000005", name: "BBQ Masala", unit: "g", quantity: 500.0, minimum_quantity: 100.0, updated_at: new Date().toISOString(), status: "in_stock" },
+  { id: "e0000000-0000-0000-0000-000000000006", name: "Basmati Rice", unit: "kg", quantity: 25.0, minimum_quantity: 5.0, updated_at: new Date().toISOString(), status: "in_stock" },
+  { id: "e0000000-0000-0000-0000-000000000007", name: "Soft Drinks Cans", unit: "pcs", quantity: 60.0, minimum_quantity: 12.0, updated_at: new Date().toISOString(), status: "in_stock" },
 ];
 
 let mockUsers: POSUser[] = [
@@ -163,10 +163,10 @@ let mockUsers: POSUser[] = [
 ];
 
 let mockIngredients: POSMenuItemIngredient[] = [
-  { id: "ing1", menu_item_id: "f0000000-0000-0000-0000-000000000001", inventory_id: "i0000000-0000-0000-0000-000000000001", inventory_name: "Chicken", unit: "kg", quantity_required: 0.35 },
-  { id: "ing2", menu_item_id: "f0000000-0000-0000-0000-000000000002", inventory_id: "i0000000-0000-0000-0000-000000000002", inventory_name: "Beef", unit: "kg", quantity_required: 0.25 },
-  { id: "ing3", menu_item_id: "f0000000-0000-0000-0000-000000000004", inventory_id: "i0000000-0000-0000-0000-000000000002", inventory_name: "Beef", unit: "kg", quantity_required: 0.15 },
-  { id: "ing4", menu_item_id: "f0000000-0000-0000-0000-000000000004", inventory_id: "i0000000-0000-0000-0000-000000000004", inventory_name: "Cheese Slices", unit: "pcs", quantity_required: 1.0 },
+  { id: "ing1", menu_item_id: "f0000000-0000-0000-0000-000000000001", inventory_id: "e0000000-0000-0000-0000-000000000001", inventory_name: "Chicken", unit: "kg", quantity_required: 0.35 },
+  { id: "ing2", menu_item_id: "f0000000-0000-0000-0000-000000000002", inventory_id: "e0000000-0000-0000-0000-000000000002", inventory_name: "Beef", unit: "kg", quantity_required: 0.25 },
+  { id: "ing3", menu_item_id: "f0000000-0000-0000-0000-000000000004", inventory_id: "e0000000-0000-0000-0000-000000000002", inventory_name: "Beef", unit: "kg", quantity_required: 0.15 },
+  { id: "ing4", menu_item_id: "f0000000-0000-0000-0000-000000000004", inventory_id: "e0000000-0000-0000-0000-000000000004", inventory_name: "Cheese Slices", unit: "pcs", quantity_required: 1.0 },
 ];
 
 // Data Fetchers & Manipulators
@@ -344,7 +344,7 @@ export async function createPOSOrder(order: {
       .from("orders")
       .insert({
         table_id: order.table_id && !order.table_id.startsWith("t") ? order.table_id : null,
-        waiter_id: order.waiter_id && !order.waiter_id.startsWith("a") && !order.waiter_id.startsWith("u") ? order.waiter_id : null,
+        waiter_id: order.waiter_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order.waiter_id) ? order.waiter_id : null,
         status: "pending",
         order_type: orderType,
         subtotal,

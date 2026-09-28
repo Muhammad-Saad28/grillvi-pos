@@ -247,15 +247,41 @@ export default function AdminOrdersPage() {
       {/* Payment & Checkout Modal */}
       <Modal isOpen={!!checkoutOrder} onClose={() => setCheckoutOrder(null)} title={`Checkout & Collect Payment - Order #${checkoutOrder?.id}`}>
         <div className="space-y-4">
-          <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1 text-xs">
+          <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2 text-xs">
             <div className="flex justify-between text-zinc-400">
               <span>Subtotal:</span>
-              <span className="text-white font-mono">Rs. {checkoutOrder?.subtotal}</span>
+              <span className="text-white font-mono">Rs. {checkoutOrder?.subtotal || 0}</span>
             </div>
             <div className="flex justify-between text-zinc-400">
               <span>GST Tax (18%):</span>
-              <span className="text-white font-mono">Rs. {checkoutOrder?.tax}</span>
+              <span className="text-white font-mono">Rs. {checkoutOrder?.tax || 0}</span>
             </div>
+            {(() => {
+              const subtotal = checkoutOrder?.subtotal || 0;
+              const tax = checkoutOrder?.tax || 0;
+              let calculatedDiscount = 0;
+              if (discountType === "percentage") {
+                calculatedDiscount = Math.round(subtotal * ((discountValue || 0) / 100));
+              } else if (discountType === "flat") {
+                calculatedDiscount = discountValue || 0;
+              }
+              const finalTotal = Math.max(0, (subtotal + tax) - calculatedDiscount);
+
+              return (
+                <>
+                  {calculatedDiscount > 0 && (
+                    <div className="flex justify-between text-emerald-400">
+                      <span>Discount Applied:</span>
+                      <span className="font-mono">- Rs. {calculatedDiscount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-sm font-black text-white pt-2 border-t border-zinc-800">
+                    <span>Final Amount to Collect:</span>
+                    <span className="font-mono text-orange-400 text-lg">Rs. {finalTotal}</span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Payment Method Selector */}
